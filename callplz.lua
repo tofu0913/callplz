@@ -46,6 +46,7 @@ local announce = nil
 message_ids = S{110,185,187,317,802}
 
 categories = S{
+    'weaponskill_begin',
     'weaponskill_finish',
     'spell_finish',
     'job_ability',
@@ -126,15 +127,21 @@ function action_handler(act)
     local add_effect = action:get_add_effect()
     local param, resource, action_id, interruption, conclusion = action:get_spell()
 
-    if message_ids:contains(message_id) then
+    if S{'weaponskill_begin'}:contains(category) then
+        player = windower.ffxi.get_mob_by_id(actor).name
+        if res[resource][action_id] then
+            ability = res[resource][action_id].name
+            -- log(player..' using ' ..ability)
+            if eventTime and reaction and actor == windower.ffxi.get_player().id and ability == reaction then
+                reaction = nil
+                eventTime = nil
+                log('Confirmed.')
+            end
+        end
+    elseif eventTime==nil and reaction==nil and message_ids:contains(message_id) then
         player = windower.ffxi.get_mob_by_id(actor).name
         ability = res[resource][action_id].name
         -- log(player..' used ' ..ability)
-        if eventTime and reaction and os.clock() - eventTime > WINDOW_WAIT and actor == windower.ffxi.get_player().id and ability == reaction then
-            reaction = nil
-            eventTime = nil
-            log('Confirmed.')
-        end
         for _,p in pairs(profiles) do
             if p['enabled'] then
                 for k, a in pairs(p['actions']) do
