@@ -89,6 +89,20 @@ windower.register_event('prerender', function()
     end
 end)
 
+function isInParty(pid)
+    if pid == windower.ffxi.get_player().id then
+        return true
+    end
+    local pt = windower.ffxi.get_party()
+    for i = 0, 5 do
+        local member = pt['p'..i]
+        if member ~= nil and member.mob.id == pid then
+            return true
+        end
+    end
+    return false
+end
+
 windower.register_event('incoming chunk',function(id,data,modified,injected,blocked)
     if id == 0x29 then	-- Mob died
         local p = packets.parse('incoming',data)
@@ -96,19 +110,14 @@ windower.register_event('incoming chunk',function(id,data,modified,injected,bloc
         local player_id = p['Actor'] 
         local message_id = p['Message'] --data:unpack('H',0x19)%32768
 
-        -- 6 == actor defeats target
-        if player_id == windower.ffxi.get_player().id and message_id == 6 then
-            -- log('killed a '..windower.ffxi.get_mob_by_id(target_id).name..' '..target_id)
+        -- 6 == actor defeats target, 20 == target falls to the ground
+        if (message_id == 6 or message_id == 20) and isInParty(player_id) then
+            -- log('killed a '..windower.ffxi.get_mob_by_id(target_id).name..' '..target_id..' by '..player_id)
             -- killedMob = windower.ffxi.get_mob_by_id(target_id).name
             eventTime = nil
             reaction = nil
             log('Reset...')
         end
-        
-        -- 20 == target falls to the ground
-        -- if message_id == 20 then
-            -- log('killed b '..windower.ffxi.get_mob_by_id(target_id).name    ..' '..target_id)
-        -- end
     end
 end)
 
