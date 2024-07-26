@@ -41,6 +41,7 @@ local tossTime = os.clock()
 local reaction = nil
 local chain = {}
 local chainCount = 1
+local announce = nil
 
 message_ids = S{110,185,187,317,802}
 
@@ -68,6 +69,10 @@ windower.register_event('prerender', function()
             if os.clock() - eventTime < WINDOW_SIZE then
                 if windower.ffxi.get_player()['vitals']['tp'] > 999 then -- within 7 seconds window
                     windower.send_command('input /ws "'..windower.to_shift_jis(reaction)..'" <t>')
+                    if announce then
+                        windower.send_command('input /p '..announce)
+                        announce = nil
+                    end
                 end
             else--Timeout
                 eventTime = nil
@@ -137,6 +142,9 @@ function action_handler(act)
                         log('Going to use '..a['action'])
                         eventTime = os.clock() + WINDOW_WAIT
                         reaction = a['action']
+                        if a['announce'] then
+                            announce = a['announce']
+                        end
                     end
                 end
             end
