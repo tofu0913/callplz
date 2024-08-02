@@ -56,7 +56,7 @@ categories = S{
 }
 
 WINDOW_WAIT = 3
-WINDOW_SIZE = 6
+WINDOW_SIZE = 7
 
 function reload_settings()
     loaded = require('profiles')
@@ -116,6 +116,7 @@ windower.register_event('incoming chunk',function(id,data,modified,injected,bloc
             -- killedMob = windower.ffxi.get_mob_by_id(target_id).name
             eventTime = nil
             reaction = nil
+            chainCount = 1
             log('Reset...')
         end
     end
@@ -144,7 +145,6 @@ function action_handler(act)
             if eventTime and reaction and actor == windower.ffxi.get_player().id and ability == reaction then
                 reaction = nil
                 eventTime = nil
-                log('Confirmed.')
             end
         end
     elseif eventTime==nil and reaction==nil and message_ids:contains(message_id) then
@@ -153,13 +153,27 @@ function action_handler(act)
         -- log(player..' used ' ..ability)
         for _,p in pairs(profiles) do
             if p['enabled'] then
-                for k, a in pairs(p['actions']) do
-                    if a['player'] == player and a['ability'] == ability then
-                        log('Going to use '..a['action'])
-                        eventTime = os.clock() + WINDOW_WAIT
-                        reaction = a['action']
-                        if a['announce'] then
-                            announce = a['announce']
+                if p['chain'] and actor == windower.ffxi.get_player().id then
+                    if #chain > 0 then
+                        if chainCount + 1 > #chain then
+                            chainCount = 1
+                            log('Confirmed, chain over.')
+                        else
+                            chainCount = chainCount + 1
+                            log('Confirmed, go to next chain.')
+                        end
+                    else
+                        log('Confirmed.')
+                    end
+                elseif p['actions'] then
+                    for k, a in pairs(p['actions']) do
+                        if a['player'] == player and a['ability'] == ability then
+                            log('Going to use '..a['action'])
+                            eventTime = os.clock() + WINDOW_WAIT
+                            reaction = a['action']
+                            if a['announce'] then
+                                announce = a['announce']
+                            end
                         end
                     end
                 end
@@ -193,20 +207,20 @@ windower.register_event('addon command', function(cmd, ...)
         else
             log('error')
         end
-    elseif S{'t','toss'}:contains(cmd) then
+    elseif S{'c','chain'}:contains(cmd) then
         local arg = T{...}
         if #arg == 1 then
             name = arg[1]:lower()
             if profiles[name] and profiles[name]['chain'] then
                 profiles[name].enabled = true
-                log('Profile '..name..' enabled!!')
+                log('Chain '..name..' enabled!!')
                 chain = profiles[name]['chain']
             else
                 log('Profile not found')
             end
         else
             toss = nil
-            log('Toss disabled')
+            log('Chain disabled')
         end
     elseif S{'s','stop'}:contains(cmd) then
         for k,v in pairs(profiles) do
