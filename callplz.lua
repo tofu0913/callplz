@@ -96,7 +96,7 @@ function isInParty(pid)
     local pt = windower.ffxi.get_party()
     for i = 0, 5 do
         local member = pt['p'..i]
-        if member ~= nil and member.mob.id == pid then
+        if member ~= nil and member.mob and member.mob.id == pid then
             return true
         end
     end
