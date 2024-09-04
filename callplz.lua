@@ -64,11 +64,20 @@ function reload_settings()
 end
 reload_settings()
 
+function checkDeBuffs()
+    local player = windower.ffxi.get_player()
+    local buffs = S(player.buffs):map(string.lower .. table.get-{'english'} .. table.get+{res.buffs})
+    if buffs.sleep or buffs.petrification or buffs.stun or buffs.charm or buffs.amnesia or buffs.terror or buffs.lullaby or buffs.impairment then
+        return false
+    end
+    return true
+end
+
 windower.register_event('prerender', function()
     if eventTime and reaction then
         if os.clock() > eventTime then--Wait window open
             if os.clock() - eventTime < WINDOW_SIZE then
-                if windower.ffxi.get_player()['vitals']['tp'] > 999 then -- within 7 seconds window
+                if windower.ffxi.get_player()['vitals']['tp'] > 999 and checkDeBuffs() then -- within 7 seconds window
                     windower.send_command('input /ws "'..windower.to_shift_jis(reaction)..'" <t>')
                     if announce then
                         windower.send_command('input /p '..announce)
