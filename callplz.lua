@@ -264,6 +264,7 @@ windower.register_event('addon command', function(cmd, ...)
         for k,v in pairs(profiles) do
             v.enabled = false
         end
+        chain = {}
         log('All disabled.')
     else
         for k,v in pairs(profiles) do
