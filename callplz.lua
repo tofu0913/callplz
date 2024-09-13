@@ -39,6 +39,7 @@ local eventTime = nil
 local lastwsCheck = os.clock()
 local tossTime = os.clock()
 local reaction = nil
+local toss = nil
 local chain = {}
 local chainCount = 1
 local announce = nil
@@ -73,28 +74,42 @@ function checkDeBuffs()
     return true
 end
 
+function launchws(ws)
+    local player = windower.ffxi.get_player()
+    local mob = windower.ffxi.get_mob_by_target()
+    if (player ~= nil) and (player.status == 1) and (mob ~= nil) then
+        if player.vitals.tp > 999 and checkDeBuffs() then
+            windower.send_command('input /ws "'..ws..'" <t>')
+            if announce then
+                windower.send_command('input /p '..announce)
+                announce = nil
+            end
+        end
+    end
+end
+
 windower.register_event('prerender', function()
     if eventTime and reaction then
         if os.clock() > eventTime then--Wait window open
-            if os.clock() - eventTime < WINDOW_SIZE then
-                if windower.ffxi.get_player()['vitals']['tp'] > 999 and checkDeBuffs() then -- within 7 seconds window
-                    windower.send_command('input /ws "'..windower.to_shift_jis(reaction)..'" <t>')
-                    if announce then
-                        windower.send_command('input /p '..announce)
-                        announce = nil
-                    end
-                end
+            if os.clock() - eventTime < WINDOW_SIZE then -- within 7 seconds window
+                launchws(windower.to_shift_jis(reaction))
             else--Timeout
                 eventTime = nil
                 reaction = nil
+                if toss then
+                    reaction = toss
+                    eventTime = os.clock()
+                else
+                    reaction = nil
+                end
                 log('Failed...')
             end
         end
-    elseif eventTime == nil and reaction == nil and #chain>0 and os.clock() - tossTime > 2 then
-        if windower.ffxi.get_player()['vitals']['tp'] > 999 then -- within 7 seconds window
-            windower.send_command('input /ws "'..windower.to_shift_jis(chain[chainCount])..'" <t>')
+    elseif eventTime == nil and reaction == nil and #chain>0 then
+        if os.clock() - tossTime > 2 then--Toss check every 2 seconds
+            launchws(windower.to_shift_jis(chain[chainCount]))
+            tossTime = os.clock()
         end
-        tossTime = os.clock()
     end
 end)
 
@@ -123,10 +138,15 @@ windower.register_event('incoming chunk',function(id,data,modified,injected,bloc
         if (message_id == 6 or message_id == 20) and isInParty(player_id) then
             -- log('killed a '..windower.ffxi.get_mob_by_id(target_id).name..' '..target_id..' by '..player_id)
             -- killedMob = windower.ffxi.get_mob_by_id(target_id).name
-            eventTime = nil
-            reaction = nil
+            if toss then
+                reaction = toss
+                eventTime = os.clock()
+            else
+                reaction = nil
+                eventTime = nil
+            end
             chainCount = 1
-            log('Reset...')
+            -- log('Reset...')
         end
     end
 end)
@@ -169,7 +189,7 @@ function action_handler(act)
                             log('Confirmed, chain over.')
                         else
                             chainCount = chainCount + 1
-                            log('Confirmed, go to next chain.')
+                            log('Confirmed, go to next chain #'..chainCount)
                         end
                     else
                         log('Confirmed.')
@@ -206,8 +226,17 @@ windower.register_event('addon command', function(cmd, ...)
             if profiles[name] then
                 profiles[name].enabled = not profiles[name].enabled
                 if profiles[name].enabled then
-                    log('Profile '..name..' enabled!!')
+                    if profiles[name].toss then
+                        toss = profiles[name].toss
+                        reaction = toss
+                        eventTime = os.clock()
+                        log('Profile '..name..' enabled, new toss: '..toss)
+                    else
+                        toss = nil
+                        log('Profile '..name..' enabled!!')
+                    end                    
                 else
+                    toss = nil
                     log('Profile '..name..' disabled.')
                 end
             else
