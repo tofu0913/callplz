@@ -76,8 +76,8 @@ function checkDeBuffs()
 end
 
 function launchws(ws)
-    local player = windower.ffxi.get_player()
     local mob = windower.ffxi.get_mob_by_target()
+    local player = windower.ffxi.get_player()
     if (player ~= nil) and (player.status == 1) and (mob ~= nil) then
         if player.vitals.tp > 999 and checkDeBuffs() then
             windower.send_command('input /ws "'..ws..'" <t>')
@@ -90,6 +90,10 @@ function launchws(ws)
 end
 
 windower.register_event('prerender', function()
+    local player = windower.ffxi.get_player()
+    if (player == nil) or (player and player.status ~= 1) then
+        return
+    end
     if eventTime and reaction then
         if os.clock() > eventTime then--Wait window open
             if os.clock() - eventTime < WINDOW_SIZE then -- within 7 seconds window
@@ -103,7 +107,7 @@ windower.register_event('prerender', function()
                 else
                     reaction = nil
                 end
-                log('Failed...')
+                -- log('Failed...')
             end
         end
     elseif eventTime == nil and reaction == nil and #chain>0 then
