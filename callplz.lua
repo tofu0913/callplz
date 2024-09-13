@@ -60,6 +60,7 @@ WINDOW_WAIT = 3
 WINDOW_SIZE = 7
 
 function reload_settings()
+    package.loaded['profiles'] = nil
     loaded = require('profiles')
     profiles = loaded[windower.ffxi.get_player().name]
 end
