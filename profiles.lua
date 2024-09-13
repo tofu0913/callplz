@@ -2,6 +2,7 @@ return {
     ["Felicya"] = {
         ['c'] = {
             ['enabled'] = false,
+            ['toss'] = "レッドロータス",
             ['actions'] = {
                 {
                     ['player']='Felicya',
@@ -30,49 +31,22 @@ return {
                 },
             },
         },
-        ['boss'] = {
-            ['enabled'] = false,
-            ['actions'] = {
-                {
-                    ['player']='Happylaw',
-                    ['ability']='アップヒーバル',
-                    ['action']='トアクリーバー',
-                },
-                {
-                    ['player']='Happylaw',
-                    ['ability']='インパルスドライヴ',
-                    ['action']='トアクリーバー',
-                },
-            },
-        },
-        ['cor'] = {
-            ['enabled'] = false,
-            ['actions'] = {
-                {
-                    ['player']='Frieren',
-                    ['ability']='ラストスタンド',
-                    ['action']='サベッジブレード',
-                },
-            },
-        },
         ['gax'] = {
             ['enabled'] = false,
-            ['chain'] = {'フルブレイク','アップヒーバル','ウッコフューリー','ウッコフューリー'},
+            ['chain'] = {'フルブレイク','アップヒーバル','ウッコフューリー','ウッコフューリー','アップヒーバル','ウッコフューリー','アップヒーバル','ウッコフューリー'},
+        },
+        ['gax2'] = {
+            ['enabled'] = false,
+            ['chain'] = {'ウッコフューリー','アップヒーバル'},
+        },
+        ['ef'] = {
+            ['enabled'] = false,
             ['actions'] = {
                 {
-                    ['player']='Felicya',
-                    ['ability']='フルブレイク',
-                    ['action']='アップヒーバル',
-                },
-                {
-                    ['player']='Felicya',
+                    ['player']='Foka',
                     ['ability']='アップヒーバル',
-                    ['action']='ウッコフューリー',
-                },
-                {
-                    ['player']='Felicya',
-                    ['ability']='ウッコフューリー',
-                    ['action']='ウッコフューリー',
+                    -- ['action']='サベッジブレード',
+                    ['action']='シャークバイト',
                 },
             },
         },
