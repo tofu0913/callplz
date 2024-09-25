@@ -43,6 +43,7 @@ local toss = nil
 local chain = {}
 local chainCount = 1
 local announce = nil
+local finished = false
 
 message_ids = S{110,185,187,317,802}
 
@@ -202,11 +203,29 @@ function action_handler(act)
                 elseif p['actions'] then
                     for k, a in pairs(p['actions']) do
                         if a['player'] == player and a['ability'] == ability then
+                            if finished then
+                                finished = false
+                                if toss then
+                                    reaction = toss
+                                    eventTime = os.clock()
+                                    log('Chain finished, back to toss')
+                                else
+                                    reaction = nil
+                                    eventTime = nil
+                                    log('Chain finished.')
+                                end
+                                return
+                            end
                             log('Going to use '..a['action'])
                             eventTime = os.clock() + WINDOW_WAIT
                             reaction = a['action']
                             if a['announce'] then
                                 announce = a['announce']
+                            end
+                            if a['finish'] then
+                                finished = true
+                            else
+                                finished = false
                             end
                         end
                     end
