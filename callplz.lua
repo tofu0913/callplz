@@ -249,19 +249,30 @@ windower.register_event('addon command', function(cmd, ...)
             name = arg[1]:lower()
             if profiles[name] then
                 profiles[name].enabled = not profiles[name].enabled
-                if profiles[name].enabled then
-                    if profiles[name].toss then
-                        toss = profiles[name].toss
-                        reaction = toss
-                        eventTime = os.clock()
-                        log('Profile '..name..' enabled, new toss: '..toss)
+                if profiles[name]['chain'] then
+                    if profiles[name].enabled then
+                        chain = profiles[name]['chain']
+                        log('Chain '..name..' enabled!!')
+                    else
+                        chain = {}
+                        toss = nil
+                        log('Chain '..name..' disabled.')
+                    end
+                else
+                    if profiles[name].enabled then
+                        if profiles[name].toss then
+                            toss = profiles[name].toss
+                            reaction = toss
+                            eventTime = os.clock()
+                            log('Profile '..name..' enabled, new toss: '..toss)
+                        else
+                            toss = nil
+                            log('Profile '..name..' enabled!!')
+                        end                    
                     else
                         toss = nil
-                        log('Profile '..name..' enabled!!')
-                    end                    
-                else
-                    toss = nil
-                    log('Profile '..name..' disabled.')
+                        log('Profile '..name..' disabled.')
+                    end
                 end
             else
                 log('Profile not found')
@@ -269,26 +280,12 @@ windower.register_event('addon command', function(cmd, ...)
         else
             log('error')
         end
-    elseif S{'c','chain'}:contains(cmd) then
-        local arg = T{...}
-        if #arg == 1 then
-            name = arg[1]:lower()
-            if profiles[name] and profiles[name]['chain'] then
-                profiles[name].enabled = true
-                log('Chain '..name..' enabled!!')
-                chain = profiles[name]['chain']
-            else
-                log('Profile not found')
-            end
-        else
-            toss = nil
-            log('Chain disabled')
-        end
     elseif S{'s','stop'}:contains(cmd) then
         for k,v in pairs(profiles) do
             v.enabled = false
         end
         chain = {}
+        toss = nil
         log('All disabled.')
     else
         for k,v in pairs(profiles) do
