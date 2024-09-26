@@ -248,31 +248,24 @@ windower.register_event('addon command', function(cmd, ...)
         if #arg == 1 then
             name = arg[1]:lower()
             if profiles[name] then
-                profiles[name].enabled = not profiles[name].enabled
-                if profiles[name]['chain'] then
-                    if profiles[name].enabled then
-                        chain = profiles[name]['chain']
+                local p = profiles[name]
+                p.enabled = not p.enabled
+                
+                if p.enabled then
+                    if p['chain'] then
+                        chain = p['chain']
                         log('Chain '..name..' enabled!!')
-                    else
-                        chain = {}
-                        toss = nil
-                        log('Chain '..name..' disabled.')
+                        
+                    elseif p['toss'] then
+                        toss = p.toss
+                        reaction = toss
+                        eventTime = os.clock()
+                        log('Profile '..name..' enabled, new toss: '..toss)
                     end
                 else
-                    if profiles[name].enabled then
-                        if profiles[name].toss then
-                            toss = profiles[name].toss
-                            reaction = toss
-                            eventTime = os.clock()
-                            log('Profile '..name..' enabled, new toss: '..toss)
-                        else
-                            toss = nil
-                            log('Profile '..name..' enabled!!')
-                        end                    
-                    else
-                        toss = nil
-                        log('Profile '..name..' disabled.')
-                    end
+                    chain = {}
+                    toss = nil
+                    log('Profile '..name..' disabled.')
                 end
             else
                 log('Profile not found')
