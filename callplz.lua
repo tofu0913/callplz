@@ -28,7 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 _addon.author = 'Cliff'
 _addon.command = 'cpz'
 _addon.name = 'CallPlz'
-_addon.version = '1.0.0'
+_addon.version = '2.0.0'
 
 require('luau')
 require('pack')
@@ -38,14 +38,14 @@ local packets = require("packets")
 local eventTime = nil
 local lastwsCheck = os.clock()
 local tossTime = os.clock()
-local reaction = nil
+local reaction = {}
 local toss = nil
-local chain = {}
 local chainCount = 1
-local announce = nil
-local finished = false
 
-message_ids = S{110,185,187,317,802}
+local profile = {}
+
+wshit_messageids = S{110,185,187,317,802}
+wsmiss_messageids = S{188,189}
 
 categories = S{
     'weaponskill_begin',
@@ -58,14 +58,7 @@ categories = S{
 }
 
 WINDOW_WAIT = 3
-WINDOW_SIZE = 7
-
-function reload_settings()
-    package.loaded['profiles'] = nil
-    loaded = require('profiles')
-    profiles = loaded[windower.ffxi.get_player().name]
-end
-reload_settings()
+WINDOW_SIZE = 8
 
 function checkDeBuffs()
     local player = windower.ffxi.get_player()
@@ -76,46 +69,52 @@ function checkDeBuffs()
     return true
 end
 
-function launchws(ws)
+function launchws(action)
     local mob = windower.ffxi.get_mob_by_target()
     local player = windower.ffxi.get_player()
     if (player ~= nil) and (player.status == 1) and (mob ~= nil) then
         if player.vitals.tp > 999 and checkDeBuffs() then
-            windower.send_command('input /ws "'..ws..'" <t>')
-            if announce then
-                windower.send_command('input /p '..announce)
-                announce = nil
+            windower.send_command('input /ws "'..windower.to_shift_jis(action['ws'])..'" <t>')
+            if action['announce'] then
+                windower.send_command('input /p '..action['announce'])
             end
         end
     end
 end
 
 windower.register_event('prerender', function()
+    if not profile.name or not reaction.ws then
+        return
+    end
     local player = windower.ffxi.get_player()
     if (player == nil) or (player and player.status ~= 1) then
         return
     end
-    if eventTime and reaction then
-        if os.clock() > eventTime then--Wait window open
-            if os.clock() - eventTime < WINDOW_SIZE then -- within 7 seconds window
-                launchws(windower.to_shift_jis(reaction))
-            else--Timeout
+    if eventTime and os.clock() > eventTime then--Wait window open
+        if os.clock() - eventTime < WINDOW_SIZE then -- within 7 seconds window
+            launchws(reaction)
+        else--Timeout
+            reaction = {}
+            if profile.toss then
+                reaction = profile.toss
+                eventTime = os.clock()
+            elseif profile.chain then
+                chainCount = 1
+                reaction.ws = profile.chain[chainCount]
+                eventTime = os.clock()
+            else
                 eventTime = nil
-                reaction = nil
-                if toss then
-                    reaction = toss
-                    eventTime = os.clock()
-                else
-                    reaction = nil
-                end
-                -- log('Failed...')
             end
+            -- log('Timed out...')
         end
-    elseif eventTime == nil and reaction == nil and #chain>0 then
-        if os.clock() - tossTime > 2 then--Toss check every 2 seconds
-            launchws(windower.to_shift_jis(chain[chainCount]))
-            tossTime = os.clock()
-        end
+        
+    -- elseif eventTime == nil and profile.chain and #profile.chain>0 then
+        -- if os.clock() - tossTime > 2 then--Toss check every 2 seconds
+            -- action = {}
+            -- action['ws'] = profile.chain[chainCount]
+            -- launchws(action)
+            -- tossTime = os.clock()
+        -- end
     end
 end)
 
@@ -144,11 +143,15 @@ windower.register_event('incoming chunk',function(id,data,modified,injected,bloc
         if (message_id == 6 or message_id == 20) and isInParty(player_id) then
             -- log('killed a '..windower.ffxi.get_mob_by_id(target_id).name..' '..target_id..' by '..player_id)
             -- killedMob = windower.ffxi.get_mob_by_id(target_id).name
-            if toss then
-                reaction = toss
+            reaction = {}
+            if profile.toss then
+                reaction = profile.toss
+                eventTime = os.clock()
+            elseif profile.chain then
+                chainCount = 1
+                reaction.ws = profile.chain[chainCount]
                 eventTime = os.clock()
             else
-                reaction = nil
                 eventTime = nil
             end
             chainCount = 1
@@ -172,64 +175,62 @@ function action_handler(act)
     local add_effect = action:get_add_effect()
     local param, resource, action_id, interruption, conclusion = action:get_spell()
 
-    if S{'weaponskill_begin'}:contains(category) then
-        player = windower.ffxi.get_mob_by_id(actor).name
-        if res[resource][action_id] then
+    if res[resource][action_id] then
+        if S{'weaponskill_begin'}:contains(category) then
             ability = res[resource][action_id].name
+            -- player = windower.ffxi.get_mob_by_id(actor).name
             -- log(player..' using ' ..ability)
-            if eventTime and reaction and actor == windower.ffxi.get_player().id and ability == reaction then
-                reaction = nil
-                eventTime = nil
-            end
-        end
-    elseif eventTime==nil and reaction==nil and message_ids:contains(message_id) then
-        player = windower.ffxi.get_mob_by_id(actor).name
-        ability = res[resource][action_id].name
-        -- log(player..' used ' ..ability)
-        for _,p in pairs(profiles) do
-            if p['enabled'] then
-                if p['chain'] and actor == windower.ffxi.get_player().id then
-                    if #chain > 0 then
-                        if chainCount + 1 > #chain then
-                            chainCount = 1
-                            log('Confirmed, chain over.')
-                        else
-                            chainCount = chainCount + 1
-                            log('Confirmed, go to next chain #'..chainCount)
-                        end
+            if eventTime and reaction.ws and actor == windower.ffxi.get_player().id and ability == reaction.ws then--Success used
+                if reaction.finish then--Finished in previous reaction
+                    if profile.toss then
+                        reaction = profile.toss
+                        eventTime = os.clock()
+                        log('Chain finished, back to toss')
                     else
-                        log('Confirmed.')
+                        reaction = {}
+                        eventTime = nil
+                        log('Chain finished.')
                     end
-                elseif p['actions'] then
-                    for k, a in pairs(p['actions']) do
-                        if a['player'] == player and a['ability'] == ability then
-                            if finished then
-                                finished = false
-                                if toss then
-                                    reaction = toss
-                                    eventTime = os.clock()
-                                    log('Chain finished, back to toss')
-                                else
-                                    reaction = nil
-                                    eventTime = nil
-                                    log('Chain finished.')
-                                end
-                                return
-                            end
-                            log('Going to use '..a['action'])
-                            eventTime = os.clock() + WINDOW_WAIT
-                            reaction = a['action']
-                            if a['announce'] then
-                                announce = a['announce']
-                            end
-                            if a['finish'] then
-                                finished = true
+                else
+                    reaction = {}
+                    eventTime = nil
+                    -- log('Confirmed.')
+                end
+            end
+        elseif eventTime == nil and reaction.ws == nil then
+            if wshit_messageids:contains(message_id) then--Successed hit
+                player = windower.ffxi.get_mob_by_id(actor).name
+                ability = res[resource][action_id].name
+                -- log(player..' used ' ..ability)
+                    
+                if profile.name then
+                    if profile.chain and actor == windower.ffxi.get_player().id then
+                        if #profile.chain > 0 then
+                            if chainCount + 1 > #profile.chain then
+                                chainCount = 1
+                                log('Confirmed, chain over.')
                             else
-                                finished = false
+                                chainCount = chainCount + 1
+                                log('Confirmed, go to next chain #'..chainCount)
+                            end
+                            reaction.ws = profile.chain[chainCount]
+                            eventTime = os.clock()
+                        else
+                            -- log('Confirmed.')
+                        end
+                        
+                    elseif profile.actions then
+                        for _, a in pairs(profile.actions) do
+                            if a['player'] == player and a['ability'] == ability then
+                                reaction = a
+                                eventTime = os.clock() + WINDOW_WAIT
+                                log('Going to use '..reaction['ws'])
                             end
                         end
                     end
                 end
+            elseif wsmiss_messageids:contains(message_id) then--Missed
+                log('Missed')
             end
         end
     end
@@ -238,33 +239,37 @@ end
 ActionPacket.open_listener(action_handler)
 
 
+function reload_settings()
+    package.loaded['profiles'] = nil
+    loaded = require('profiles')
+    return loaded[windower.ffxi.get_player().name]
+end
+
 windower.register_event('addon command', function(cmd, ...)
     cmd = cmd and cmd:lower()
-	if S{'r','reload','load','l'}:contains(cmd) then
-        reload_settings()
-        log('Profile reloaded.')
-    elseif S{'p','profile'}:contains(cmd) then
+	if S{'p','profile','c'}:contains(cmd) then
         local arg = T{...}
         if #arg == 1 then
+            local profiles = reload_settings()
             name = arg[1]:lower()
             if profiles[name] then
-                local p = profiles[name]
-                p.enabled = not p.enabled
-                
-                if p.enabled then
-                    if p['chain'] then
-                        chain = p['chain']
-                        log('Chain '..name..' enabled!!')
-                        
-                    elseif p['toss'] then
-                        toss = p.toss
-                        reaction = toss
+                if profile.name ~= name then
+                    profile = profiles[name]
+                    profile.name = name
+                    reaction = {}
+                    if profile.toss then
+                        reaction = profile.toss
                         eventTime = os.clock()
-                        log('Profile '..name..' enabled, new toss: '..toss)
+                    elseif profile.chain then
+                        chainCount = 1
+                        reaction.ws = profile.chain[chainCount]
+                        eventTime = os.clock()
+                    else
+                        eventTime = nil
                     end
+                    log('Profile '..name..' enabled!!!')
                 else
-                    chain = {}
-                    toss = nil
+                    profile = {}
                     log('Profile '..name..' disabled.')
                 end
             else
@@ -274,18 +279,16 @@ windower.register_event('addon command', function(cmd, ...)
             log('error')
         end
     elseif S{'s','stop'}:contains(cmd) then
-        for k,v in pairs(profiles) do
-            v.enabled = false
-        end
-        chain = {}
-        toss = nil
-        log('All disabled.')
+        profile = {}
+        log('Profile disabled.')
     else
-        for k,v in pairs(profiles) do
-            if v.enabled then
-                log(k..' enabled')
-            end
+        if profile.name then
+            log(profile.name..' enabled')
+        else
+            log('Nothing...')
         end
+        log(eventTime)
+        log(reaction.ws)
     end
 end)
 

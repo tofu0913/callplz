@@ -1,52 +1,93 @@
 return {
     ["Felicya"] = {
-        ['c'] = {
-            ['enabled'] = false,
-            ['toss'] = "レッドロータス",
-            ['actions'] = {
-                {
-                    ['player']='Felicya',
-                    ['ability']='レッドロータス',
-                    ['action']='フラットブレード',
-                },
-                -- {
-                    -- ['player']='Felicya',
-                    -- ['ability']='フラットブレード',
-                    -- ['action']='サベッジブレード',
-                -- },
-            },
-        },
-        ['d'] = {
-            ['enabled'] = false,
-            ['actions'] = {
-                {
-                    ['player']='Felicya',
-                    ['ability']='レッドロータス',
-                    ['action']='ファストブレード',
-                },
-                {
-                    ['player']='Felicya',
-                    ['ability']='ファストブレード',
-                    ['action']='レッドロータス',
-                },
-            },
-        },
         ['gax'] = {
-            ['enabled'] = false,
             ['chain'] = {'フルブレイク','アップヒーバル','ウッコフューリー','ウッコフューリー','アップヒーバル','ウッコフューリー','アップヒーバル','ウッコフューリー'},
         },
-        ['gax2'] = {
-            ['enabled'] = false,
-            ['chain'] = {'ウッコフューリー','アップヒーバル'},
+        ['test'] = {
+            ['toss'] = {
+                ['ws']='フルブレイク',
+            },
+            ['actions'] = {
+                {
+                    ['player']='Felicya',
+                    ['ability']='フルブレイク',
+                    ['ws']='アップヒーバル',
+                },
+                {
+                    ['player']='Felicya',
+                    ['ability']='アップヒーバル',
+                    ['ws']='ウッコフューリー',
+                },
+                {
+                    ['player']='Felicya',
+                    ['ability']='ウッコフューリー',
+                    ['ws']='ウッコフューリー',
+                    ['finish']=true,
+                },
+            },
         },
+        -- ['bboss'] = {
+            -- ['actions'] = {
+                -- {
+                    -- ['player']='Haha',
+                    -- ['ability']='ホットショット',
+                    -- ['action']='ルースレスストローク',
+                -- },
+            -- },
+        -- },
+        -- ['aboss'] = {
+            -- ['actions'] = {
+                -- {
+                    -- ['player']='Haha',
+                    -- ['ability']='アップヒーバル',
+                    -- ['action']='ルースレスストローク',
+                -- },
+            -- },
+        -- },
+        -- ['fboss'] = {
+            -- ['actions'] = {
+                -- {
+                    -- ['player']='Haha',
+                    -- ['ability']='ナイツオブラウンド',
+                    -- ['action']='エヴィサレーション',
+                -- },
+                -- {
+                    -- ['player']='Felicya',
+                    -- ['ability']='エヴィサレーション',
+                    -- ['action']='ルドラストーム',
+                -- },
+                -- {
+                    -- ['player']='Felicya',
+                    -- ['ability']='ルドラストーム',
+                    -- ['action']='ルドラストーム',
+                    -- ['finish']=true,
+                -- },
+            -- },
+        -- },
+        -- ['dncdrk'] = {
+            -- ['toss'] = "エヴィサレーション",
+            -- ['actions'] = {
+                -- {
+                    -- ['player']='Felicya',
+                    -- ['ability']='エヴィサレーション',
+                    -- ['action']='ルドラストーム',
+                -- },
+                -- {
+                    -- ['player']='Felicya',
+                    -- ['ability']='ルドラストーム',
+                    -- ['action']='ルドラストーム',
+                    -- ['finish']=true,
+                -- },
+            -- },
+        -- },
         ['ef'] = {
-            ['enabled'] = false,
             ['actions'] = {
                 {
                     ['player']='Foka',
                     ['ability']='アップヒーバル',
-                    -- ['action']='サベッジブレード',
-                    ['action']='シャークバイト',
+                    ['ws']='トアクリーバー',
+                    -- ['ws']='サベッジブレード',
+                    -- ['ws']='シャークバイト',
                 },
             },
         },
