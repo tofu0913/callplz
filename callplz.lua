@@ -230,7 +230,12 @@ function action_handler(act)
                     end
                 end
             elseif wsmiss_messageids:contains(message_id) then--Missed
-                log('Missed')
+                if profile.chain and actor == windower.ffxi.get_player().id then
+                    log('Missed')
+                    chainCount = 1
+                    reaction.ws = profile.chain[chainCount]
+                    eventTime = os.clock()
+                end
             end
         end
     end
